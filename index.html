@@ -1,0 +1,2368 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<title>Homework 8</title>
+
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1">
+
+		<link rel="stylesheet" href="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/css/bootstrap.min.css" integrity="sha384-ggOyR0iXCbMQv3Xipma34MD+dH/1fQ784/j6cY/iJTQUOhcWr7x9JvoRxT2MZw1T" crossorigin="anonymous">
+		<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+
+		<script src = "https://code.jquery.com/jquery-3.3.1.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js" integrity="sha384-UO2eT0CpHqdSJQ6hJty5KVphtPhzWj9WO1clHTMGa3JDZwrnQq4sF86dIHNDz0W1" crossorigin="anonymous"></script>
+		<script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js" integrity="sha384-JjSmVgyd0p3pXB1rRibZUAYoIIy6OrQ6VrjIEaFf/nJGzIxFDsf4x0xIM+B07jRM" crossorigin="anonymous"></script>
+
+		<script src = "http://ajax.googleapis.com/ajax/libs/jqueryui/1.10.3/jquery-ui.min.js"></script>
+	    <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular-animate.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular-aria.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.7.6/angular-messages.min.js"></script>
+		<script src="https://ajax.googleapis.com/ajax/libs/angular_material/1.1.12/angular-material.min.js"></script>
+		<script src = "https://cdnjs.cloudflare.com/ajax/libs/moment.js/2.18.1/moment.min.js"></script>
+		<script src="https://cdnjs.cloudflare.com/ajax/libs/angular-svg-round-progressbar/0.4.8/roundProgress.min.js"></script>
+
+		<style>
+			.title:hover {
+				cursor: pointer;
+				text-decoration: underline;
+			}
+
+			table td, th {
+				padding: 10px;
+			}
+
+			.gimg {
+				column-count: 3;
+				column-gap: 15px;
+			}
+
+			.gimg img {
+				border: 5px solid black;
+				max-width: 300px;
+				height: auto;
+				margin-top: 15px;
+			}
+			
+			@media only screen and (max-width: 1400px)
+			{
+				.gimg {
+					column-count: 2;
+				}
+			}
+
+			@media only screen and (max-width: 800px)
+			{
+				.gimg {
+					column-count: 1;
+				}
+			}
+
+			.material-icons.orange600 { color: #FB8C00; }
+		</style>
+
+		<script>
+			var url = "http://ip-api.com/json";
+			var app = angular.module('search-app', []);
+			app.controller('searchController', function($scope) {
+				
+			});
+
+			var results = [];
+			var wishlist = [];
+			var wc = 0;
+			var total = 0;
+			var header = document.createElement("tr");
+			var header2 = document.createElement("tr");
+			var head;
+			var count = 0;
+			var pg = 1;
+			var curItem = [];
+			var fbId = "1244255945731071";
+			var similar = [];
+			var similarC = [];
+			var sc = 0;
+			var sort = "df";
+			var sortC = "a";
+			var sug = [];
+			var mp;
+
+			function updSrch()
+			{
+				if($("#cur").prop("checked") && $("#cur").val() != "" && $("#keyword").val() != "")
+				{
+					$("#search").attr("disabled", false);
+				}
+				else if($("#other").prop("checked") && $("#zmsg").prop("hidden") && $("#kmsg").prop("hidden"))
+				{
+					$("#search").attr("disabled", false);
+				}
+				else
+				{
+					$("#search").attr("disabled", true);
+				}
+			}
+
+			function clearFunc()
+			{
+				$("#zip").attr("disabled", true);
+				$("#search").attr("disabled", true);
+				curItem = [];
+				$("#res").html("");
+				$("#inf").attr("hidden", true);
+				$("#infcont").html("");
+				$("#res").attr("hidden", true);
+				$("#msg1").attr("hidden", true);
+				$("#page").attr("hidden", true);
+				$("#dets").attr("hidden", true);
+				sort = 'df';
+				sortC = 'a';
+				count = 0;
+				pg = 1;
+				similar = [];
+				similarC = [];
+				document.getElementById("prod").reset();
+			}
+
+			function getLocation()
+			{
+				$("#keyword").change(function()
+				{
+					if($("#keyword").val() != "")
+					{
+						$("#kmsg").attr("hidden", true);
+						$("#keyword").attr("style", "border:0px solid black");
+						updSrch();
+					}
+					else
+					{
+						$("#kmsg").attr("hidden", false);
+						$("#keyword").attr("style", "border:2px solid red");
+						updSrch();
+					}
+				});
+
+				$("#zip").change(function()
+				{
+					var exp = new RegExp(/\d\d\d\d\d/g);
+					if(exp.test($("#zip").val()))
+					{
+						$("#zmsg").attr("hidden", true);
+						$("#zip").attr("style", "border:0px solid black");
+						updSrch();
+					}
+					else
+					{
+						$("#zmsg").attr("hidden", false);
+						$("#zip").attr("style", "border:2px solid red");
+						updSrch();
+					}
+				});
+
+				if(localStorage.getItem("wishlist") != null)
+				{
+					wishlist = JSON.parse(localStorage.getItem("wishlist"));
+				}
+				else
+				{
+					wishlist = [];
+				}
+				wc = 0;
+				for(var i = 0; i < wishlist.length; ++i)
+				{
+					if(wishlist[i] != null)
+					{
+						++wc;
+					}
+				}
+				
+				if(localStorage.getItem("total") != null)
+				{
+					total = parseFloat(localStorage.getItem("total"));
+				}
+				else
+				{
+					total = 0;
+				}	
+
+				$.ajax({url: url, complete: function(xhr)
+					{ 
+						$("#cur").val((JSON.parse(xhr.responseText))['zip']);
+					}});
+				head = document.createElement("th");
+				head.innerHTML = "#";
+				head.scope = "col";
+				head.class = "";
+				header.appendChild(head);
+
+				head = document.createElement("th");
+				head.innerHTML = "Image";
+				head.scope = "col";
+				head.class = "";
+				header.appendChild(head);
+
+				head = document.createElement("th");
+				head.innerHTML = "Title";
+				head.scope = "col";
+				head.class = "";
+				header.appendChild(head);
+
+				head = document.createElement("th");
+				head.innerHTML = "Price";
+				head.scope = "col";
+				head.class = "";
+				header.appendChild(head);
+
+				head = document.createElement("th");
+				head.innerHTML = "Shipping";
+				head.scope = "col";
+				head.class = "";
+				header.appendChild(head);
+
+				head = document.createElement("th");
+				head.innerHTML = "Zip";
+				head.scope = "col";
+				head.class = "";
+				header.appendChild(head);
+
+				head = document.createElement("th");
+				head.innerHTML = "Seller";
+				head.scope = "col";
+				head.class = "";
+				header.appendChild(head);
+
+				head = document.createElement("th");
+				head.innerHTML = "Wish List";
+				head.scope = "col";
+				head.class = "";
+				header.appendChild(head);
+
+				head = document.createElement("th");
+				head.innerHTML = "#";
+				head.scope = "col";
+				head.class = "";
+				header2.appendChild(head);
+
+				head = document.createElement("th");
+				head.innerHTML = "Image";
+				head.scope = "col";
+				head.class = "";
+				header2.appendChild(head);
+
+				head = document.createElement("th");
+				head.innerHTML = "Title";
+				head.scope = "col";
+				head.class = "";
+				header2.appendChild(head);
+
+				head = document.createElement("th");
+				head.innerHTML = "Price";
+				head.scope = "col";
+				head.class = "";
+				header2.appendChild(head);
+
+				head = document.createElement("th");
+				head.innerHTML = "Shipping";
+				head.scope = "col";
+				head.class = "";
+				header2.appendChild(head);
+
+				head = document.createElement("th");
+				head.innerHTML = "Seller";
+				head.scope = "col";
+				head.class = "";
+				header2.appendChild(head);
+
+				head = document.createElement("th");
+				head.innerHTML = "Wish List";
+				head.scope = "col";
+				head.class = "";
+				header2.appendChild(head);
+
+				$("#res").append(header);
+				//console.log(wishlist);
+			}
+
+			function getSug()
+			{
+				var val = "";
+				var url = "./sug/zip/" + val;
+				$.ajax({ url: url, complete: function(xhr) 
+					{
+						var temp = JSON.parse(xhr.responseText);
+						if(temp['postalCodes'] != undefined && temp['postalCodes'].length != 0)
+						{
+							for(var i = 0; i < temp['postalCodes'].length; ++i)
+							{
+								sug[i] = temp['postalCodes']['postalCode'];
+							}
+						}
+						else
+						{
+							sug = [];
+						}
+					}
+				});
+			}
+
+			function update() //Location
+			{
+				document.getElementById('zip').disabled = true;
+				document.getElementById('zip').value = '';
+				$("#zmsg").attr("hidden", true);
+				$("#zip").attr("style", "border:0px solid black");
+				updSrch();
+			}
+
+			function update2() // Other
+			{
+				document.getElementById('zip').disabled = false;
+				updSrch();
+			}
+
+			function searchProd()
+			{
+				$("#msg1").attr("hidden", true);
+				$("#wishlistB").attr("class", "btn btn-light");
+				$("#resultsB").attr("class", "btn btn-dark");
+				$("#dets").attr("disabled", true);
+				curItem = [];
+
+				var kw = $("#keyword").val();
+				kw = kw.replace(/ /g, '+');
+				var link = './search/keyword/' + kw;
+				link += '/' + $("#category").val();
+				
+				if($("#new")[0].checked)
+				{
+					link += '/new/true';
+				}
+				else
+				{
+					link += '/new/false';
+				}
+				
+				if($("#used")[0].checked)
+				{
+					link += '/used/true';
+				}
+				else
+				{
+					link += '/used/false';
+				}
+				
+				if($("#unspec")[0].checked)
+				{
+					link += '/unspec/true';
+				}
+				else
+				{
+					link += '/unspec/false';
+				}
+				
+				if($("#pickup")[0].checked)
+				{
+					link += '/pickup/true';
+				}
+				else
+				{
+					link += '/pickup/false';
+				}
+				
+				if($("#free")[0].checked)
+				{
+					link += '/free/true';
+				}
+				else
+				{
+					link += '/free/false';
+				}
+				
+				var dist = 10;
+				if($("#dist").val() != '')
+				{
+					dist = $("#dist").val();
+				}
+				link += '/dist/' + dist;
+
+				var loc;
+				if($("#cur")[0].checked)
+				{
+					loc = $("#cur").val();
+				}
+				else
+				{
+					loc = $("#zip").val();
+				}
+				link += '/zip/' + loc;
+				//console.log(link);
+				$.ajax({url: link, beforeSend: function(xhr){ $("#load").attr("hidden", false); }, complete: function(xhr)
+					{
+						$("#load").attr("hidden", true);
+						//console.log(xhr.responseText);
+						var temp = JSON.parse(xhr.responseText)['findItemsAdvancedResponse'][0]['searchResult'][0]; 
+						count = temp['@count'];
+						temp = temp['item'];
+						//console.log(temp);
+						if(count > 0)
+						{
+							var id;
+							var image;
+							var title;
+							var price;
+							var ship;
+							var zip;
+							var seller;
+							var shinfo;
+							var sinfo;
+							var stinfo;
+							var val;
+							var share;
+							
+							for(i = 0; i < count; ++i)
+							{
+								id = temp[i]['itemId'][0];
+
+								if(temp[i]['galleryURL'] != undefined)
+								{
+									image = temp[i]['galleryURL'][0];
+								}
+								else
+								{
+									image = "";
+								}
+
+								if(temp[i]['title'] != undefined)
+								{
+									title = temp[i]['title'][0];
+								}
+								else
+								{
+									title = "N/A";
+								}
+								
+								if(temp[i]['sellingStatus'] != undefined && temp[i]['sellingStatus'][0]['currentPrice'] != undefined && temp[i]['sellingStatus'][0]['currentPrice'][0]['__value__'] != undefined)
+								{
+									price = "$" + temp[i]['sellingStatus'][0]['currentPrice'][0]['__value__']
+								}
+								else
+								{
+									price = "N/A";
+								}
+
+								if(temp[i]['shippingInfo'] != undefined && temp[i]['shippingInfo'][0]['shippingServiceCost'] != undefined && temp[i]['shippingInfo'][0]['shippingServiceCost'][0]['__value__'] != undefined)
+								{	
+									ship = temp[i]['shippingInfo'][0]['shippingServiceCost'][0]['__value__'];
+									ship = ship == 0 ? "Free Shipping" : "$" + ship;
+								}
+								else
+								{
+									ship = "N/A";
+								}
+
+								if(temp[i]['postalCode'] != undefined)
+								{
+									zip = temp[i]['postalCode'][0];
+								}
+								else
+								{
+									zip = "N/A";
+								}
+
+								if(temp[i]['sellerInfo'] != undefined && temp[i]['sellerInfo'][0]['sellerUserName'] != undefined)
+								{
+									seller = temp[i]['sellerInfo'][0]['sellerUserName'][0];
+								}
+								else
+								{
+									seller = "N/A";
+								}
+
+								if(temp[i]['shippingInfo'] != undefined)
+								{
+									shinfo = temp[i]['shippingInfo'][0];
+								}
+								else
+								{
+									shinfo = "N/A";
+								}
+
+								if(temp[i]['sellerInfo'] != undefined)
+								{
+									sinfo = temp[i]['sellerInfo'][0];
+								}
+								else
+								{
+									sinfo = "N/A";
+								}
+
+								if(temp[i]['storeInfo'] != undefined)
+								{
+									stinfo = temp[i]['storeInfo'][0];
+								}
+								else
+								{
+									stinfo = "N/A";
+								}
+
+								if(findW(id) != -1)
+								{
+									val = true;
+								}
+								else
+								{
+									val = false;
+								}
+
+								if(temp[i]['viewItemURL'] != undefined)
+								{
+									share = temp[i]['viewItemURL'][0];
+								}
+								else
+								{
+									share = "N/A";
+								}
+
+								results[i] = {"id": id, "image": image, "title": title, "price": price, "ship": ship, "zip": zip, "seller": seller, "wishlist": val, "shinfo": shinfo, "sinfo": sinfo, "stinfo": stinfo, "share": share};
+							}
+							pg = 1;
+							//console.log(results[0]['id']);
+							//console.log(wishlist[0]['id']);
+							createPages();
+							details();
+						}
+						else
+						{
+							pg = 0;
+							$("#res").attr("hidden", true);
+							$("#page").html("");
+							$("#page").attr("hidden", true);
+							$("#msg1").attr("hidden", false);
+						}
+					}});
+			}
+
+			function findW(id)
+			{
+				for(var i = 0; i < wc; ++i)
+				{
+					if(wishlist[i]['id'] == id)
+					{
+						return i;
+					}
+				}
+				return -1;
+			}
+
+			function createPages()
+			{
+				var mval = Math.ceil(count / 10.0);
+				var but;
+				var temp = document.getElementById("page");
+				temp.innerHTML = "";
+				if(mval == 1)
+				{
+					but = document.createElement("button");
+					but.innerHTML = "<i class = 'material-icons align-middle' id = 't0'>keyboard_arrow_left</i>Previous";
+					but.id = "p0";
+					but.setAttribute("class", "btn btn-light");
+					but.disabled = true;
+					but.setAttribute("onclick", "showPage(event)");
+					temp.appendChild(but);
+
+					but = document.createElement("button");
+					but.innerHTML = 1;
+					but.setAttribute("class", "btn btn-dark");
+					but.id = "p" + 1;
+					temp.appendChild(but);
+
+					but = document.createElement("button");
+					but.innerHTML = "Next<i class = 'material-icons align-middle' id = 't6'>keyboard_arrow_right</i>";
+					but.id = "p6";
+					but.setAttribute("class", "btn btn-light");
+					but.setAttribute("onclick", "showPage(event)");
+					but.disabled = true;
+					temp.appendChild(but);
+				}
+				else
+				{
+					but = document.createElement("button");
+					but.innerHTML = "<i class = 'material-icons align-middle' id = 't0'>keyboard_arrow_left</i>Previous";
+					but.id = "p0";
+					but.setAttribute("class", "btn btn-light");
+					but.disabled = true;
+					but.setAttribute("onclick", "showPage(event)");
+					temp.appendChild(but);
+
+					but = document.createElement("button");
+					but.innerHTML = 1;
+					but.setAttribute("class", "btn btn-dark");
+					but.setAttribute("onclick", "showPage(event)");
+					but.id = "p" + 1;
+					temp.appendChild(but);
+
+					for(var i = 1; i < mval; ++i)
+					{
+						but = document.createElement("button");
+						but.id = "p" + (i + 1);
+						but.setAttribute("class", "btn btn-light");
+						but.innerHTML = i + 1;
+						but.setAttribute("onclick", "showPage(event)");
+						temp.appendChild(but);
+					}
+
+					but = document.createElement("button");
+					but.innerHTML = "Next<i class = 'material-icons align-middle' id = 't6'>keyboard_arrow_right</i>";
+					but.id = "p6";
+					but.setAttribute("class", "btn btn-light");
+					but.setAttribute("onclick", "showPage(event)");
+					temp.appendChild(but);
+
+					$("#page").attr("hidden", false);
+				}
+
+			}
+
+			function showPage(event)
+			{
+				var id = event.target.id;
+				id = id[1];
+				var maxp = Math.ceil(count / 10.0);
+				if(id == 0)
+				{
+					$("#p"+pg).attr("class", "btn btn-light");
+					--pg;
+					details();
+					$("#p"+pg).attr("class", "btn btn-dark");
+				}
+				else if(id == 6)
+				{
+					$("#p"+pg).attr("class", "btn btn-light");
+					++pg;
+					details();
+					$("#p"+pg).attr("class", "btn btn-dark");
+				}
+				else
+				{
+					$("#p"+pg).attr("class", "btn btn-light");
+					pg = id;
+					details();
+					$("#p"+id).attr("class", "btn btn-dark");
+				}
+
+				if(pg == 1)
+				{
+					$("#p0").attr("disabled", true);
+				}
+				else
+				{
+					$("#p0").attr("disabled", false);
+				}
+				if(pg == maxp)
+				{
+					$("#p6").attr("disabled", true);
+				}
+				else
+				{
+					$("#p6").attr("disabled", false);
+				}
+			}
+
+			function clearDetails()
+			{
+				$("#res").html("");
+				$("#res").append(header);
+			}
+
+			function dispInfo(event)
+			{
+				var id = event.target.id;
+				var url = './info/id/' + id;
+				$.ajax({url: url, beforeSend: function() { $("#load").attr("hidden", false); }, complete: function(xhr) {
+					var temp = JSON.parse(xhr.responseText);
+					$("#load").attr("hidden", true);
+					if(temp['Ack'] != "Success")
+					{
+
+					}
+					else
+					{
+						var val1;
+						var val2;
+						var val3;
+						var val4;
+						var val5;
+						var val6;
+
+						val1 = [];
+						temp = temp['Item'];
+						if(temp['PictureURL'] != undefined)
+						{
+							for(var i = 0; i < temp['PictureURL']['length']; ++i)
+							{
+								val1[i] = temp['PictureURL'][i];
+							}
+						}
+						else
+						{
+							val1 = "N/A";
+						}
+						
+						if(temp['Subtitle'] != undefined)
+						{
+							val2 = temp['Subtitle'];
+						}
+						else
+						{
+							val2 = "N/A";
+						}
+
+						if(temp['CurrentPrice'] != undefined && temp['CurrentPrice']['Value'] != undefined)
+						{
+							val3 = "$" + temp['CurrentPrice']['Value'];
+						}
+						else
+						{
+							val3 = "N/A";
+						}
+
+						if(temp['Location'] != undefined)
+						{
+							val4 = temp['Location'];
+						}
+						else
+						{
+							val4 = "N/A";
+						}
+
+						if(temp['ReturnPolicy'] != undefined && temp['ReturnPolicy']['ReturnsAccepted'] != undefined)
+						{
+							val5 = temp['ReturnPolicy']['ReturnsAccepted'];
+							if(temp['ReturnPolicy']['ReturnWithin'] != undefined)
+							{
+								val5 += " Within " + temp['ReturnPolicy']['ReturnWithin'];
+							}
+						}
+						else
+						{
+							val5 = "N/A";
+						}
+
+						if(temp['ItemSpecifics'] != undefined && temp['ItemSpecifics']['NameValueList'] != undefined)
+						{
+							val6 = temp['ItemSpecifics']['NameValueList'];
+						}
+						else
+						{
+							val6 = "N/A";
+						}
+
+						curItem[0] = {"title": temp['Title'],"pics": val1, "subtitle": val2, "price": val3, "loc": val4, "return": val5, "specs": val6, "id": id};
+
+						if(curItem[0] != undefined && curItem[0]['title'] != undefined && curItem[0]['title'] != "N/A")
+						{	
+							var s = "./img/title/" + curItem[0]['title'];
+							s = s.replace(/ /g, '+');
+							$.ajax({ url: s, complete: function(xhr)
+								{
+									var im = [];
+									var temp = JSON.parse(xhr.responseText);
+									if(temp['items'] != undefined)
+									{
+										temp = temp['items'];
+									}
+									for(var i = 0; i < temp.length; ++i)
+									{
+										if(temp[i]['link'] != undefined)
+										{
+											im[i] = temp[i]['link'];
+										}
+										else
+										{
+											im[i] = "N/A";
+										}
+									}
+									curItem[1] = im;
+								}});
+						}
+
+						val1 = "";
+						var j = findR(id);
+						if(j != -1)
+						{	
+							var x = results[j]['shinfo'];
+							if(x != "N/A")
+							{
+								val1 = results[j]['ship'];
+
+								if(x['shipToLocations'] != undefined)
+								{
+									val2 = x['shipToLocations'][0];
+								}
+								else
+								{
+									val2 = "N/A";
+								}
+
+								if(x['handlingTime'] != undefined)
+								{
+									if(x['handlingTime'][0] > 1)
+									{
+										val3 = x['handlingTime'][0] + " Days";
+									}
+									else
+									{
+										val3 = x['handlingTime'][0] + " Day";
+									}
+								}
+								else
+								{
+									val3 = "N/A";
+								}
+
+								if(x['expeditedShipping'] != undefined)
+								{
+									if(x['expeditedShipping'][0] == "false")
+									{
+										val4 = false;
+									}
+									else
+									{
+										val4 = true;
+									}
+								}
+								else
+								{
+									val4 = false;
+								}
+
+								if(x['oneDayShippingAvailable'] != undefined)
+								{
+									if(x['oneDayShippingAvailable'][0] == "false")
+									{
+										val5 = false;
+									}
+									else
+									{
+										val5 = true;
+									}
+								}
+								else
+								{
+									val5 = false;
+								}
+
+								if(results[j]['return'] != "N/A")
+								{
+									val6 = true;
+								}
+								else
+								{
+									val6 = false;
+								}
+							}
+							else
+							{
+								val1 = val2 = val3 = val4 = val5 = val6 = "N/A";
+							}
+
+							curItem[2] = { "cost": val1, "loc": val2, "time": val3, "es": val4, "ods": val5, "ra": val6, "wl": results[j]['wishlist'] };
+
+							x = results[j]['sinfo'];
+							if(x['feedbackScore'] != undefined)
+							{
+								val1 = x['feedbackScore'][0];
+							}
+							else
+							{
+								val1 = "N/A";
+							}
+
+							if(x['positiveFeedbackPercent'] != undefined)
+							{
+								val2 = x['positiveFeedbackPercent'][0];
+							}
+							else
+							{
+								val2 = "N/A";
+							}
+
+							if(x['feedbackRatingStar'] != undefined)
+							{
+								val3 = x['feedbackRatingStar'][0];
+							}
+							else
+							{
+								val3 = "N/A";
+							}
+
+							if(x['topRatedSeller'] != undefined)
+							{
+								val4 = x['topRatedSeller'][0];
+								if(val4 == "false")
+								{
+									val4 = false;
+								}
+								else
+								{
+									val4 = true;
+								}
+							}
+							else
+							{
+								val4 = false;
+							}
+
+							x = results[j]['stinfo'];
+							if(x['storeName'] != undefined)
+							{
+								val5 = x['storeName'][0];
+							}
+							else
+							{
+								val5 = "N/A";
+							}
+							if(x['storeURL'] != undefined)
+							{
+								val6 = x['storeURL'][0];
+							}
+							else
+							{
+								val6 = "N/A";
+							}
+
+							curItem[3] = { "score": val1, "pop": val2, "star": val3, "top": val4, "name": val5, "link": val6, "title": results[j]['seller'], "share": results[j]['share'] };
+						}
+						else
+						{
+							j = findW(id);
+							var x = wishlist[j]['shinfo'];
+							if(x != "N/A")
+							{
+								val1 = wishlist[j]['ship'];
+
+								if(x['shipToLocations'] != undefined)
+								{
+									val2 = x['shipToLocations'][0];
+								}
+								else
+								{
+									val2 = "N/A";
+								}
+
+								if(x['handlingTime'] != undefined)
+								{
+									if(x['handlingTime'][0] > 1)
+									{
+										val3 = x['handlingTime'][0] + " Days";
+									}
+									else
+									{
+										val3 = x['handlingTime'][0] + " Day";
+									}
+								}
+								else
+								{
+									val3 = "N/A";
+								}
+
+								if(x['expeditedShipping'] != undefined)
+								{
+									if(x['expeditedShipping'][0] == "false")
+									{
+										val4 = false;
+									}
+									else
+									{
+										val4 = true;
+									}
+								}
+								else
+								{
+									val4 = false;
+								}
+
+								if(x['oneDayShippingAvailable'] != undefined)
+								{
+									if(x['oneDayShippingAvailable'][0] == "false")
+									{
+										val5 = false;
+									}
+									else
+									{
+										val5 = true;
+									}
+								}
+								else
+								{
+									val5 = false;
+								}
+
+								if(wishlist[j]['return'] != "N/A")
+								{
+									val6 = true;
+								}
+								else
+								{
+									val6 = false;
+								}
+							}
+							else
+							{
+								val1 = val2 = val3 = val4 = val5 = val6 = "N/A";
+							}
+
+							curItem[2] = { "cost": val1, "loc": val2, "time": val3, "es": val4, "ods": val5, "ra": val6, "wl": true };
+
+							x = wishlist[j]['sinfo'];
+							if(x['feedbackScore'] != undefined)
+							{
+								val1 = x['feedbackScore'][0];
+							}
+							else
+							{
+								val1 = "N/A";
+							}
+
+							if(x['positiveFeedbackPercent'] != undefined)
+							{
+								val2 = x['positiveFeedbackPercent'][0];
+							}
+							else
+							{
+								val2 = "N/A";
+							}
+
+							if(x['feedbackRatingStar'] != undefined)
+							{
+								val3 = x['feedbackRatingStar'][0];
+							}
+							else
+							{
+								val3 = "N/A";
+							}
+
+							if(x['topRatedSeller'] != undefined)
+							{
+								val4 = x['topRatedSeller'][0];
+								if(val4 == "false")
+								{
+									val4 = false;
+								}
+								else
+								{
+									val4 = true;
+								}
+							}
+							else
+							{
+								val4 = false;
+							}
+
+							x = wishlist[j]['stinfo'];
+							if(x['storeName'] != undefined)
+							{
+								val5 = x['storeName'][0];
+							}
+							else
+							{
+								val5 = "N/A";
+							}
+							if(x['storeURL'] != undefined)
+							{
+								val6 = x['storeURL'][0];
+							}
+							else
+							{
+								val6 = "N/A";
+							}
+
+							curItem[3] = { "score": val1, "pop": val2, "star": val3, "top": val4, "name": val5, "link": val6, "title": wishlist[j]['seller'], "share": wishlist[j]['share'] };
+						}
+						var str = "https://www.facebook.com/dialog/share?app_id=" + fbId + "&display=page&href=" + curItem[3]['share'] + "&quote=" + curItem[0]['title'];
+						str = str.replace(/ /g, '+');
+						$("#fb").attr("href", str);
+						renderInfo();
+					}
+				}});
+			}
+
+			function findR(id)
+			{
+				for(var i = 0; i < count; ++i)
+				{
+					if(results[i]['id'] == id)
+					{
+						return i;
+					}
+				}
+				return -1;
+			}
+
+			function renderInfo()
+			{
+				//console.log(curItem[0]['specs']);
+				info1();
+				getSimilar();
+				$("#i1").attr("class", "btn btn-dark");
+				$("#i2").attr("class", "btn btn-light");
+				$("#i3").attr("class", "btn btn-light");
+				$("#i4").attr("class", "btn btn-light");
+				$("#i5").attr("class", "btn btn-light");
+				showInfo();
+			}
+
+			function showInfo()
+			{
+				$("#dets").attr("disabled", false);
+				$("#dets").attr("hidden", true);
+				$("#res").attr("hidden", true);
+				$("#page").attr("hidden", true);
+				$("#inf").attr("hidden", false);
+				$("#msg2").html(curItem[0]['title']);
+				
+				if(curItem[2]['wl'])
+				{
+					$("#iwl").html("<i class = 'material-icons align-middle orange600'>remove_shopping_cart</i>"); 
+				}
+				else
+				{
+					$("#iwl").html("<i class = 'material-icons align-middle'>add_shopping_cart</i>");
+				}
+			}
+
+			function details()
+			{
+				clearDetails();
+
+				var row;
+				var td;
+				var temp;
+				var lb = (pg - 1) * 10;
+				var mb = pg * 10;
+				if(mb > count)
+				{
+					mb = count;
+				}
+				for(var i = lb; i < mb; ++i)
+				{
+					row = document.createElement("tr");
+					if(curItem[0] != undefined && curItem[0]['id'] != undefined)
+					{
+						if(curItem[0]['id'] == results[i]['id'])
+						{
+							row.setAttribute("style", "background-color:#d9d9d9");
+						}
+					}
+					td = document.createElement("td");
+
+					td.innerHTML = i + 1;
+					td.scope = "row";
+					row.appendChild(td);
+
+					td = document.createElement("td");
+					td.innerHTML = "<a target = '_blank' href = '" + results[i]['image'] + "'><img style = 'width:80px; height: 80px' src='" + results[i]['image'] + "'></a>";
+					td.scope = "row";
+					row.appendChild(td);
+
+					td = document.createElement("td");
+					td.innerHTML = "<span class = 'text-primary title' onclick = 'dispInfo(event)' data-toggle = 'tooltip' data-placement = 'bottom' title = '" + results[i]['title'] + "' id = '" + results[i]['id'] + "'>" + clipText(results[i]['title']) + "</span>";
+					td.scope = "row";
+					row.appendChild(td);
+
+					td = document.createElement("td");
+					td.innerHTML = results[i]['price'];
+					td.scope = "row";
+					row.appendChild(td);
+
+					td = document.createElement("td");
+					td.innerHTML = results[i]['ship'];
+					td.scope = "row";
+					row.appendChild(td);
+
+					td = document.createElement("td");
+					td.innerHTML = results[i]['zip'];
+					td.scope = "row";
+					row.appendChild(td);
+
+					td = document.createElement("td");
+					td.innerHTML = results[i]['seller'];
+					td.scope = "row";
+					row.appendChild(td);
+
+					td = document.createElement("td");
+					if(results[i]['wishlist'] == false)
+					{
+						td.innerHTML = "<button class = 'btn btn-light' id = '" + i + "' onclick = 'updWish(event)'><i class = 'material-icons align-middle' id = 'ic" + i + "'>add_shopping_cart</i></button>";
+					}
+					else
+					{
+						td.innerHTML = "<button class = 'btn btn-light' id = '" + i + "' onclick = 'updWish(event)'><i class = 'material-icons align-middle orange600' id = 'ic" + i + "'>remove_shopping_cart</i></button>";
+					}
+					td.scope = "row";
+					row.appendChild(td);
+					
+					$("#res").append(row);
+				}
+				$("#dets").attr("hidden", false);
+				$("#res").attr("hidden", false);
+				sort = 'df';
+				sortC = 'a';
+			}
+
+			function updWish(event)
+			{
+				var id = event.target.id;
+				var j;
+				if(id.indexOf("ic") > -1)
+				{
+					id = id[2];
+				}
+				if(results[id]['wishlist'] == false)
+				{	
+					results[id]['wishlist'] = true;
+					$("#ic"+id).html("remove_shopping_cart");
+					$("#ic"+id).attr("class", "material-icons align-middle orange600");
+					wishlist[wc] = results[id];
+					total += parseFloat(results[id]['price'].substring(1));
+					++wc;
+					if(curItem[0] != undefined && curItem[0]['id'] != undefined)
+					{
+						if(curItem[0]['id'] == results[id]['id'])
+						{
+							curItem[2]['wl'] = true;
+						}
+					}
+				}
+				else
+				{
+					results[id]['wishlist'] = false;
+					$("#ic"+id).html("add_shopping_cart");
+					$("#ic"+id).attr("class", "material-icons align-middle");
+					j = findW(results[id]['id']);
+					--wc;
+					wishlist[j] = wishlist[wc];
+					delete wishlist[wc];
+					total -= parseFloat(results[id]['price'].substring(1));
+					if(curItem[0] != undefined && curItem[0]['id'] != undefined)
+					{
+						if(curItem[0]['id'] == results[id]['id'])
+						{
+							curItem[2]['wl'] = false;
+						}
+					}
+				}
+				localStorage.setItem("wishlist", JSON.stringify(wishlist));
+				localStorage.setItem("total", total);
+			}
+
+			function updWish1(event)
+			{
+				var id = event.target.id;
+				if(id.indexOf("ic") > -1)
+				{
+					id = id[2];
+				}
+
+				if(findR(wishlist[id]['id']) != -1)
+				{
+					results[findR(wishlist[id]['id'])]['wishlist'] = false;
+				}
+
+				if(curItem[0] != undefined && curItem[0]['id'])
+				{
+					if(curItem[0]['id'] == wishlist[id]['id'])
+					{
+						$("#dets").attr("disabled", true);
+						curItem[2]['wl'] = false;
+					}
+				}
+				--wc;
+				total -= parseFloat(wishlist[id]['price'].substring(1));
+				$("#total").html("$" + Math.abs(total.toFixed(2)));
+				if(wc > 0)
+				{
+					wishlist[id] = wishlist[wc];
+					delete wishlist[wc];
+					renderWishlist();
+				}
+				else
+				{
+					$("#res").attr("hidden", true);
+					$("#msg1").attr("hidden", false);
+					wishlist = [];
+					total = 0;
+				}
+				localStorage.setItem("wishlist", JSON.stringify(wishlist));
+				localStorage.setItem("total", total);
+			}
+
+			function updWish2()
+			{
+				if(curItem[2]['wl'] == false)
+				{
+					results[findR(curItem[0]['id'])]['wishlist'] = true;
+					wishlist[wc] = results[findR(curItem[0]['id'])];
+					total += parseFloat(wishlist[wc]['price'].substring(1));
+					++wc;
+					$("#iwl").html("<i class = 'material-icons align-middle orange600'>remove_shopping_cart</i>");
+					curItem[2]['wl'] = true;
+				}
+				else
+				{
+					var j = findR(curItem[0]['id']);
+					if(j != -1)
+					{
+						results[j]['wishlist'] = false;
+					}
+					j = findW(curItem[0]['id']);
+					--wc;
+					total -= parseFloat(curItem[0]['price'].substring(1));
+					if(wc > 0)
+					{	
+						wishlist[j] = wishlist[wc];
+						wishlist[wc] = "";
+					}
+					else
+					{
+						wishlist = [];
+					}
+					$("#iwl").html("<i class = 'material-icons align-middle'>add_shopping_cart</i>");
+					curItem[2]['wl'] = false;
+				}
+				localStorage.setItem("wishlist", JSON.stringify(wishlist));
+				localStorage.setItem("total", total);
+			}
+
+			function clipText(text)
+			{
+				if(text.length > 25)
+				{
+					var i = 25;
+					while(text.charAt(i) != " ")
+					{
+						--i;
+					}
+					text = text.substring(0, i);
+					text += "..."
+				}
+				return text;
+			}
+
+			function dispResults()
+			{
+				$("#wishlistB").attr("class", "btn btn-light");
+				$("#resultsB").attr("class", "btn btn-dark");
+				$("#inf").attr("hidden", true);
+				if(count == 0)
+				{
+					$("#msg1").attr("hidden", false);
+					$("#res").attr("hidden", true);
+				}
+				else
+				{
+					$("#msg1").attr("hidden", true);
+					details();
+					$("#page").attr("hidden", false);
+				}
+			}
+
+			function switchInfo(event)
+			{
+				var id = event.target.id;
+				if(id == "i1")
+				{
+					info1();
+					$("#i1").attr("class", "btn btn-dark");
+					$("#i2").attr("class", "btn btn-light");
+					$("#i3").attr("class", "btn btn-light");
+					$("#i4").attr("class", "btn btn-light");
+					$("#i5").attr("class", "btn btn-light");
+				}
+				else if(id == "i2")
+				{
+					info2();
+					$("#i1").attr("class", "btn btn-light");
+					$("#i2").attr("class", "btn btn-dark");
+					$("#i3").attr("class", "btn btn-light");
+					$("#i4").attr("class", "btn btn-light");
+					$("#i5").attr("class", "btn btn-light");
+				}
+				else if(id == "i3")
+				{
+					info3();
+					$("#i1").attr("class", "btn btn-light");
+					$("#i2").attr("class", "btn btn-light");
+					$("#i3").attr("class", "btn btn-dark");
+					$("#i4").attr("class", "btn btn-light");
+					$("#i5").attr("class", "btn btn-light");
+				}
+				else if(id == "i4")
+				{
+					info4();
+					$("#i1").attr("class", "btn btn-light");
+					$("#i2").attr("class", "btn btn-light");
+					$("#i3").attr("class", "btn btn-light");
+					$("#i4").attr("class", "btn btn-dark");
+					$("#i5").attr("class", "btn btn-light");
+				}
+				else if(id == "i5")
+				{
+					info5();
+					$("#i1").attr("class", "btn btn-black");
+					$("#i2").attr("class", "btn btn-light");
+					$("#i3").attr("class", "btn btn-light");
+					$("#i4").attr("class", "btn btn-light");
+					$("#i5").attr("class", "btn btn-dark");
+				}
+			}
+
+			function prev()
+			{
+				if(mp == 0)
+				{
+					mp = curItem[0]['pics'].length - 1;
+				}
+				else
+				{
+					--mp;
+				}
+				$("#modalpic").attr("src", curItem[0]['pics'][mp]);
+				$("#modallink").attr("href", curItem[0]['pics'][mp]);
+			}
+
+			function next()
+			{
+				if(mp == curItem[0]['pics'].length - 1)
+				{
+					mp = 0;
+				}
+				else
+				{
+					++mp;
+				}
+				$("#modalpic").attr("src", curItem[0]['pics'][mp]);
+				$("#modallink").attr("href", curItem[0]['pics'][mp]);
+			}
+
+			function info1()
+			{
+				var cont = "<table class = 'col-12 col-sm-12 col-md-12 col-ld-12 col-xl-12 table-striped table-dark'>";
+				var r;
+
+				$("#modaltitle").html(curItem[0]['title']);
+				if(curItem[0]['pics'] != "N/A")
+				{
+					r = "<tr><th class = 'col-3 col-sm-3 col-md-3 col-ld-3 col-xl-3'>Product Images</th><td class = 'col-9 col-sm-9 col-md-9 col-ld-9 col-xl-9'><button type = 'button' class = 'btn btn-dark text-info' data-toggle = 'modal' data-target = '#picmodal'>View Product Images Here</button></td></tr>";
+					var temp = "";
+					mp = 0;
+					if(curItem[0]['pics'].length > 1)
+					{
+						temp += "<button style = 'btn btn-light' onclick='prev()'><i class = 'material-icons align-middle'>keyboard_arrow_left</i></button>";
+						temp += "<a id = 'modallink' target = '_blank' href = '" + curItem[0]['pics'][0] + "'><img id = 'modalpic' style = 'border:5px solid black; max-width: 300px; height: auto' src = '" + curItem[0]['pics'][0] + "'></a>";
+						temp += "<button style = 'btn btn-light' onclick='next()'><i class = 'material-icons align-middle'>keyboard_arrow_right</i></button>";
+					}
+					else
+					{
+						temp += "<a id = 'modallink' target = '_blank' href = '" + curItem[0]['pics'][0] + "'><img id = 'modalpic' style = 'border:5px solid black; max-width: 300px; height: auto' src = '" + curItem[0]['pics'][0] + "'></a>";
+					}
+					$("#modalbody").html(temp);
+					cont += r;
+				}
+
+				if(curItem[0]['subtitle'] != "N/A")
+				{
+					r = "<tr><th class = 'col-3 col-sm-3 col-md-3 col-ld-3 col-xl-3'>Subtitle</th><td class = 'col-9 col-sm-9 col-md-9 col-ld-9 col-xl-9'>" + curItem[0]['subtitle'] + "</td></tr>";
+					cont += r;
+				}
+
+				if(curItem[0]['price'] != "N/A")
+				{
+					r = "<tr><th class = 'col-3 col-sm-3 col-md-3 col-ld-3 col-xl-3'>Price</th><td class = 'col-9 col-sm-9 col-md-9 col-ld-9 col-xl-9'>" + curItem[0]['price'] + "</td></tr>";
+					cont += r;
+				}
+
+				if(curItem[0]['loc'] != "N/A")
+				{
+					r = "<tr><th class = 'col-3 col-sm-3 col-md-3 col-ld-3 col-xl-3'>Location</th><td class = 'col-9 col-sm-9 col-md-9 col-ld-9 col-xl-9'>" + curItem[0]['loc'] + "</td></tr>";
+					cont += r;
+				}
+
+				if(curItem[0]['return'] != "N/A")
+				{
+					r = "<tr><th class = 'col-3 col-sm-3 col-md-3 col-ld-3 col-xl-3'>Return Policy</th><td class = 'col-9 col-sm-9 col-md-9 col-ld-9 col-xl-9'>" + curItem[0]['return'] + "</td></tr>";
+					cont += r;
+				}
+
+				if(curItem[0]['specs'] != "N/A")
+				{
+					for(var i = 0; i < curItem[0]['specs'].length; ++i)
+					{
+						r = "<tr><th class = 'col-3 col-sm-3 col-md-3 col-ld-3 col-xl-3'>" + curItem[0]['specs'][i]['Name'] + "</th><td class = 'col-9 col-sm-9 col-md-9 col-ld-9 col-xl-9'>" + curItem[0]['specs'][i]['Value'] + "</td></tr>";
+						cont += r;
+					}
+				}
+
+				$("#infcont").html(cont);
+			}
+
+			function info2()
+			{
+				var cont;
+				if(curItem[1] != undefined)
+				{	
+					cont = "<div class = 'col-12 col-sm-12 col-md-12 col-ld-12 col-xl-12'>";
+					cont += "<div class = 'gimg'>";
+					for(var i = 0; i < curItem[1].length; ++i)
+					{
+						cont += "<a target = '_blank' href = '" + curItem[1][i] + "'><img src = '" + curItem[1][i] + "'></a>";
+					}
+					cont += "</div></div>";
+					
+				}
+				else
+				{
+					cont = "<div style='width:100%;background-color:#ffffcc'>No Records</div>";
+				}
+				$("#infcont").html(cont);
+			}
+
+			function info3()
+			{
+				var cont = "<table class = 'col-12 col-sm-12 col-md-12 col-ld-12 col-xl-12 table-striped table-dark'>";
+				var r;
+
+				if(curItem[2]['cost'] != "N/A")
+				{
+					r = "<tr><th class = 'col-7 col-sm-7 col-md-7 col-ld-7 col-xl-7'>Shipping Cost</th><td class = 'col-5 col-sm-5 col-md-5 col-ld-5 col-xl-5'>" + curItem[2]['cost'] + "</td></tr>";
+					cont += r;
+				}
+
+				if(curItem[2]['loc'] != "N/A")
+				{
+					r = "<tr><th class = 'col-7 col-sm-7 col-md-7 col-ld-7 col-xl-7'>Shipping Locations</th><td class = 'col-5 col-sm-5 col-md-5 col-ld-5 col-xl-5'>" + curItem[2]['loc'] + "</td></tr>";
+					cont += r;
+				}
+
+				if(curItem[2]['time'] != "N/A")
+				{
+					r = "<tr><th class = 'col-7 col-sm-7 col-md-7 col-ld-7 col-xl-7'>Handling Time</th><td class = 'col-5 col-sm-5 col-md-5 col-ld-5 col-xl-5'>" + curItem[2]['time'] + "</td></tr>";
+					cont += r;
+				}
+
+				var temp;
+				if(curItem[2]['es'])
+				{
+					temp = "<i class = 'material-icons align-middle' style = 'color:green'>done</i>";
+				}
+				else
+				{
+					temp = "<i class = 'material-icons align-middle' style = 'color:red'>clear</i>";
+				}
+				r = "<tr><th class = 'col-7 col-sm-7 col-md-7 col-ld-7 col-xl-7'>Expedited Shipping</th><td class = 'col-5 col-sm-5 col-md-5 col-ld-5 col-xl-5'>" + temp + "</td></tr>";
+				cont += r;
+
+				if(curItem[2]['ods'])
+				{
+					temp = "<i class = 'material-icons align-middle' style = 'color:green'>done</i>";
+				}
+				else
+				{
+					temp = "<i class = 'material-icons align-middle' style = 'color:red'>clear</i>";
+				}
+				r = "<tr><th class = 'col-7 col-sm-7 col-md-7 col-ld-7 col-xl-7'>One Day Shipping</th><td class = 'col-5 col-sm-5 col-md-5 col-ld-5 col-xl-5'>" + temp + "</td></tr>";
+				cont += r;
+
+				if(curItem[2]['ra'])
+				{
+					temp = "<i class = 'material-icons align-middle' style = 'color:green'>done</i>";
+				}
+				else
+				{
+					temp = "<i class = 'material-icons align-middle' style = 'color:red'>clear</i>";
+				}
+				r = "<tr><th class = 'col-7 col-sm-7 col-md-7 col-ld-7 col-xl-7'>Return Accepted</th><td class = 'col-5 col-sm-5 col-md-5 col-ld-5 col-xl-5'>" + temp + "</td></tr>";
+				cont += r;
+
+				$("#infcont").html(cont);
+			}
+
+			function info4()
+			{
+				var cont = "<table class = 'col-12 col-sm-12 col-md-12 col-ld-12 col-xl-12 table-striped table-dark'>";
+				var r;
+				if(curItem[3]['title'] != "N/A")
+				{
+					r = "<tr><th class = 'col-12 col-sm-12 col-md-12 col-ld-12 col-xl-12' colspan='2'><h3 class = 'text-center'>" + curItem[3]['title'].toUpperCase() + "</h3></th></tr>";
+					cont += r;
+				}
+
+				if(curItem[3]['score'] != "N/A")
+				{
+					r = "<tr><th class = 'col-6 col-sm-6 col-md-6 col-ld-6 col-xl-6'>Feedback Score</th><td class = 'col-6 col-sm-6 col-md-6 col-ld-6 col-xl-6'>" + curItem[3]['score'] + "</td></tr>";
+					cont += r;
+				}
+
+				if(curItem[3]['pop'] != "N/A")
+				{
+					r = "<tr><th class = 'col-6 col-sm-6 col-md-6 col-ld-6 col-xl-6'>Popularity</th><td class = 'col-6 col-sm-6 col-md-6 col-ld-6 col-xl-6'><round-progress max = '100.0' current='" + curItem[3]['pop'] + "'>" + curItem[3]['pop'] + "</round-progress></td></tr>";
+					cont += r;
+				}
+
+				if(curItem[3]['star'] != "N/A")
+				{
+					var colour;
+					var c = curItem[3]['star'];
+					if(c == "Yellow")
+					{
+						colour = "<i class = 'material-icons align-middle' style = 'color: yellow'>star_border</i>";
+					}
+					else if(c == "Blue")
+					{
+						colour = "<i class = 'material-icons align-middle' style = 'color: blue '>star_border</i>";
+					}
+					else if(c == "Turquoise")
+					{
+						colour = "<i class = 'material-icons align-middle' style = 'color:turquoise'>star_border</i>";
+					}
+					else if(c == "Purple")
+					{
+						colour = "<i class = 'material-icons align-middle' style = 'color:purple'>star_border</i>";
+					}
+					else if(c == "Red")
+					{
+						colour = "<i class = 'material-icons align-middle' style = 'color:red'>star_border</i>";
+					}
+					else if(c == "Green")
+					{
+						colour = "<i class = 'material-icons align-middle' style = 'color:green'>star_border</i>";
+					}
+					else if(c == "YellowShooting")
+					{
+						colour = "<i class = 'material-icons align-middle' style = 'color:yellow'>star</i>";
+					}
+					else if(c == "TurquoiseShooting")
+					{
+						colour = "<i class = 'material-icons align-middle' style = 'color:turquoise'>star</i>";
+					}
+					else if(c == "PurpleShooting")
+					{
+						colour = "<i class = 'material-icons align-middle' style = 'color:purple'>star</i>";
+					}
+					else if(c == "RedShooting")
+					{
+						colour = "<i class = 'material-icons align-middle' style = 'color:red'>star</i>";
+					}
+					else if(c == "GreenShooting")
+					{
+						colour = "<i class = 'material-icons align-middle' style = 'color:green'>star</i>";
+					}
+					else if(c == "SilverShooting")
+					{
+						colour = "<i class = 'material-icons align-middle' style = 'color:silver'>star</i>";
+					}
+					r = "<tr><th class = 'col-6 col-sm-6 col-md-6 col-ld-6 col-xl-6'>Feedback Rating Star</th><td class = 'col-6 col-sm-6 col-md-6 col-ld-6 col-xl-6'>" + colour + "</td></tr>";
+					cont += r;
+				}
+
+				var temp;
+				if(curItem[3]['top'])
+				{
+					temp = "<i class = 'material-icons align-middle' style = 'color:green'>done</i>";
+				}
+				else
+				{
+					temp = "<i class = 'material-icons align-middle' style = 'color:red'>clear</i>";
+				}
+				r = "<tr><th class = 'col-7 col-sm-7 col-md-7 col-ld-7 col-xl-7'>Top Rated</th><td class = 'col-5 col-sm-5 col-md-5 col-ld-5 col-xl-5'>" + temp + "</td></tr>";
+				cont += r;
+
+				if(curItem[3]['name'] != "N/A")
+				{
+					r = "<tr><th class = 'col-6 col-sm-6 col-md-6 col-ld-6 col-xl-6'>Store Name</th><td class = 'col-6 col-sm-6 col-md-6 col-ld-6 col-xl-6'>" + curItem[3]['name'] + "</td></tr>";
+					cont += r;
+				}
+
+				if(curItem[3]['link'] != "N/A")
+				{
+					r = "<tr><th class = 'col-6 col-sm-6 col-md-6 col-ld-6 col-xl-6'>Buy Product At</th><td class = 'col-6 col-sm-6 col-md-6 col-ld-6 col-xl-6'><a class = 'text-primary' target = '_blank' href = '" + curItem[3]['link'] + "'>Store</a></td></tr>";
+					cont += r;
+				}
+
+				$("#infcont").html(cont);
+			}
+
+			function info5()
+			{
+				var cont;
+				if(sc > 0)
+				{
+					cont = "<select onchange = 'updSim()' class = 'custom-select col-4 col-sm-4 col-md-2 col-ld-2 col-xl-2' id = 'sort'>";
+					if(sort == 'df')
+					{
+						cont += "<option value = 'df' selected>Default</option>";
+					}
+					else
+					{
+						cont += "<option value = 'df'>Default</option>";
+					}
+					if(sort == 'n')
+					{
+						cont += "<option value = 'n' selected>Product Name</option>";
+					}
+					else
+					{
+						cont += "<option value = 'n'>Product Name</option>";
+					}
+					if(sort == 'd')
+					{
+						cont += "<option value = 'd' selected>Days Left</option>";
+					}
+					else
+					{
+						cont += "<option value = 'd'>Days Left</option>";
+					}
+					if(sort == 'p')
+					{
+						cont += "<option value = 'p' selected>Price</option>";
+					}
+					else
+					{
+						cont += "<option value = 'p'>Price</option>";
+					}
+					if(sort == 's')
+					{
+						cont += "<option value = 's' selected>Shipping Cost</option>";
+					}
+					else
+					{
+						cont += "<option value = 's'>Shipping Cost</option>";
+					}
+					cont += "</select>";
+					if(sort == 'df')
+					{
+						cont += "<select onchange = 'updSim1()' class = 'custom-select col-4 col-sm-4 col-md-2 col-ld-2 col-xl-2' id = 'sortC' style = 'margin-left:10px' disabled>";
+					}	
+					else
+					{
+						cont += "<select onchange = 'updSim1()' class = 'custom-select col-4 col-sm-4 col-md-2 col-ld-2 col-xl-2' id = 'sortC' style = 'margin-left:10px'>";
+					}
+					if(sortC == 'a')
+					{
+						cont += "<option value = 'a' selected>Ascending</option>";
+						cont += "<option value = 'd'>Descending</option>";
+					}
+					else
+					{
+						cont += "<option value = 'a'>Ascending</option>";
+						cont += "<option value = 'd' selected>Descending</option>";
+					}
+					cont += "</select><br/>";
+					cont += "<div class = 'container'>";
+					if(similar.length > 5)
+					{
+						for(var i = 0; i < sc; ++i)
+						{
+							cont += "<div class = 'row bg-dark' style = 'margin-top:15px; padding:10px'>";
+							cont += "<div class = 'col-4 col-sm-4 col-md-4 col-ld-4 col-xl-4'><a target = '_blank' href = '" + similar[i]['pic'] + "'><img style='margin-top:5px' height = '80px' width = '80px' src = '" + similar[i]['pic'] + "'></a></div>";
+							cont += "<div class = 'col-8 col-sm-8 col-md-8 col-ld-8 col-xl-8'>";
+							cont += "<div class = 'row'><a target = '_blank' class = 'text-info' href = '" + similar[i]['link'] + "'>" + similar[i]['title'] + "</a></div>";
+							cont += "<div class = 'row'><span class = 'text-success'>Price: " + similar[i]['price'] + "</span></div>";
+							cont += "<div class = 'row'><span class = 'text-warning'>Shipping Cost: " + similar[i]['ship'] + "</span></div>";
+							cont += "<div class = 'row'><span class = 'text-white'>Days Left: " + similar[i]['day'] + "</span></div>";
+							cont += "</div></div>";
+						}
+						cont += "</div><br/><div class = 'col-5 col-sm-5 col-md-5 col-ld-5 col-xl-5'></div>";
+						cont += "<div class = 'col-4 col-sm-4 col-md-4 col-ld-4 col-xl-4'><button style = 'margin-top:15px' onclick='";
+						if(sc < similar.length)
+						{
+							cont += "javascript: sc = similar.length; info5();' class = 'btn btn-dark'>Show More</button></div>"	
+						}
+						else
+						{
+							cont += "javascript: sc = 5; info5();' class = 'btn btn-dark'>Show Less</button></div>"
+						}
+					}
+					else
+					{
+						for(var i = 0; i < sc; ++i)
+						{
+							cont += "<div class = 'row bg-dark' style = 'margin-top:15px; padding:10px'>";
+							cont += "<div class = 'col-4 col-sm-4 col-md-4 col-ld-4 col-xl-4'><a target = '_blank' href = '" + similar[i]['pic'] + "'><img style='margin-top:5px' height = '80px' width = '80px' src = '" + similar[i]['pic'] + "'></a></div>";
+							cont += "<div class = 'col-8 col-sm-8 col-md-8 col-ld-8 col-xl-8'>";
+							cont += "<div class = 'row'><a target = '_blank' class = 'text-info' href = '" + similar[i]['link'] + "'>" + similar[i]['title'] + "</a></div>";
+							cont += "<div class = 'row'><span class = 'text-success'>Price: " + similar[i]['price'] + "</span></div>";
+							cont += "<div class = 'row'><span class = 'text-warning'>Shipping Cost: " + similar[i]['ship'] + "</span></div>";
+							cont += "<div class = 'row'><span class = 'text-white'>Days Left: " + similar[i]['day'] + "</span></div>";
+							cont += "</div></div>";
+						}
+						cont += "</div>";
+					}
+				}
+				else
+				{
+					cont = "<div style='width:100%;background-color:#ffffcc'>No Records</div>";
+				}
+				$("#infcont").html(cont);
+			}
+
+			function updSim()
+			{
+				var x = $("#sort").val();
+				var val;
+				var temp;
+				if(x == 'df')
+				{
+					similar = similarC;
+					sort = 'df'
+					sortC = 'a';
+					info5();
+					return;
+				}
+				else if(x == 'n')
+				{
+					val = 'title';
+					sort = 'n';
+				}
+				else if(x == 'd')
+				{
+					val = 'day';
+					sort = 'd';
+				}
+				else if(x == 'p')
+				{
+					val = 'price';
+					sort = 'p';
+				}
+				else if(x == 's')
+				{
+					val = 'ship';
+					sort = 's';
+				}
+				if($("#sortC").val() == 'a')
+				{
+					for(var i = 0; i < similar.length - 1; ++i)
+					{
+						for(var j = 0; j < similar.length - i - 1; ++j)
+						{
+							if(similar[j][val] > similar[j+1][val])
+							{
+								temp = similar[j];
+								similar[j] = similar[j+1];
+								similar[j+1] = temp;
+							}
+						}
+					}
+				}
+				else
+				{
+					for(var i = 0; i < similar.length - 1; ++i)
+					{
+						for(var j = 0; j < similar.length - i - 1; ++j)
+						{
+							if(similar[j][val] < similar[j+1][val])
+							{
+								temp = similar[j];
+								similar[j] = similar[j+1];
+								similar[j+1] = temp;
+							}
+						}
+					}
+				}
+				info5();
+			}
+
+			function updSim1()
+			{
+				var temp = [];
+				var j = similar.length - 1;
+				for(var i = 0; i < similar.length; ++i)
+				{
+					temp[i] = similar[j];
+					--j;
+				}
+				similar = temp;
+				if($("#sortC").val() == 'a')
+				{
+					sortC = 'a';
+				}
+				else
+				{
+					sortC = 'd';
+				}
+				info5();
+			}
+
+			function getSimilar()
+			{
+				var link = "./similar/id/" + curItem[0]['id'];
+				
+				$.ajax({ url: link, complete: function(xhr)
+					{
+						var temp = JSON.parse(xhr.responseText);
+						temp = temp['getSimilarItemsResponse'];
+						
+						if(temp['ack'] != "Success")
+						{
+
+						}
+						else
+						{
+							temp = temp['itemRecommendations']['item'];
+							if(temp.length == 0)
+							{
+								sc = 0;
+							}
+							else
+							{
+								if(temp.length > 5)
+								{
+									sc = 5;
+								}
+								else
+								{
+									sc = temp.length;
+								}
+								var title;
+								var id;
+								var link;
+								var price;
+								var ship;
+								var day;
+								var pic;
+								
+								for(var i = 0; i < temp.length; ++i)
+								{
+									if(temp[i]['title'] != undefined)
+									{
+										title = temp[i]['title'];
+									}
+									else
+									{
+										title = "N/A";
+									}
+
+									if(temp[i]['id'] != undefined)
+									{
+										id = temp[i]['id'];
+									}
+									else
+									{
+										id = "N/A";
+									}
+
+									if(temp[i]['viewItemURL'] != undefined)
+									{
+										link = temp[i]['viewItemURL'];
+									}
+									else
+									{
+										link = "N/A";
+									}
+
+									if(temp[i]['buyItNowPrice'] != undefined)
+									{
+										price = "$" + temp[i]['buyItNowPrice']['__value__'];
+									}
+									else
+									{
+										price = "N/A";
+									}
+
+									if(temp[i]['shippingCost'] != undefined)
+									{
+										ship = "$" + temp[i]['shippingCost']['__value__'];
+									}
+									else
+									{
+										ship = "N/A";
+									}
+
+									if(temp[i]['timeLeft'] != undefined)
+									{
+										var s = temp[i]['timeLeft'];
+										s = s.substring(s.indexOf('P') + 1, s.indexOf('D'));
+										if(s != "")
+										{
+											day = parseInt(s);
+										}
+										else
+										{
+											day = 0;
+										}
+									}
+									else
+									{
+										day = "N/A";
+									}
+
+									if(temp[i]['imageURL'] != undefined)
+									{
+										pic = temp[i]['imageURL'];
+									}
+									else
+									{
+										pic = "N/A";
+									}
+
+									similar[i] = { "title": title, "id": id, "link": link, "price": price, "ship": ship, "day": day, "pic": pic };
+									similarC[i] = { "title": title, "id": id, "link": link, "price": price, "ship": ship, "day": day, "pic": pic };
+								}
+							}
+						}
+					}});
+			}
+
+			function dispWishlist()
+			{
+				$("#resultsB").attr("class", "btn btn-light");
+				$("#wishlistB").attr("class", "btn btn-dark");
+				$("#inf").attr("hidden", true);
+				$("#page").attr("hidden", true);
+				if(wc == 0)
+				{
+					$("#msg1").attr("hidden", false);
+					$("#res").attr("hidden", true);
+				}
+				else
+				{
+					$("#msg1").attr("hidden", true);
+					renderWishlist();
+				}
+			}
+
+			function dispList()
+			{
+				$("#inf").attr("hidden", true);
+				if(document.getElementById("wishlistB").className == "btn btn-dark")
+				{
+					if(wc > 0)
+					{
+						renderWishlist();
+					}
+					else
+					{
+						$("#msg1").attr("hidden", false);
+					}
+				}
+				else
+				{
+					details();
+					$("#page").attr("hidden", false);
+				}
+			}
+
+			function clearWishlist()
+			{
+				$("#res").html("");
+				$("#res").append(header2);
+			}
+
+			function renderWishlist()
+			{
+				clearWishlist();
+				var row;
+				var td;
+				var temp;
+				for(var i = 0; i < wc; ++i)
+				{
+					row = document.createElement("tr");
+					if(curItem[0] != undefined && curItem[0]['id'] != undefined)
+					{
+						if(curItem[0]['id'] == wishlist[i]['id'])
+						{
+							row.setAttribute("style", "background-color:#d9d9d9");
+						}
+					}
+					td = document.createElement("td");
+
+					td.innerHTML = i + 1;
+					td.scope = "row";
+					row.appendChild(td);
+
+					td = document.createElement("td");
+					td.innerHTML = "<a target = '_blank' href = '" + wishlist[i]['image'] + "'><img style = 'width:80px; height: 80px' src='" + wishlist[i]['image'] + "'></a>";
+					td.scope = "row";
+					row.appendChild(td);
+
+					td = document.createElement("td");
+					td.innerHTML = "<span class = 'text-primary title' onclick = 'dispInfo(event)' data-toggle = 'tooltip' data-placement = 'bottom' title = '" + wishlist[i]['title'] + "' id = '" + wishlist[i]['id'] + "'>" + clipText(wishlist[i]['title']) + "</span>";
+					td.scope = "row";
+					row.appendChild(td);
+
+					td = document.createElement("td");
+					td.innerHTML = wishlist[i]['price'];
+					td.scope = "row";
+					row.appendChild(td);
+
+					td = document.createElement("td");
+					td.innerHTML = wishlist[i]['ship'];
+					td.scope = "row";
+					row.appendChild(td);
+
+					td = document.createElement("td");
+					td.innerHTML = wishlist[i]['seller'];
+					td.scope = "row";
+					row.appendChild(td);
+
+					td = document.createElement("td");
+					td.innerHTML = "<button class = 'btn btn-light' id = '" + i + "' onclick = 'updWish1(event)'><i class = 'material-icons align-middle orange600' id = 'ic" + i + "'>remove_shopping_cart</i></button>";
+					td.scope = "row";
+					row.appendChild(td);
+					
+					$("#res").append(row);
+				}
+				
+				row = document.createElement("tr");
+				for(var j = 0; j < 5; ++j)
+				{
+					td = document.createElement("th");
+					td.class = "row";
+					td.innerHTML = "";
+					row.appendChild(td);
+				}
+				td = document.createElement("th")
+				td.innerHTML = "Total Shopping";
+				td.scope = "row";
+				row.appendChild(td);
+				td = document.createElement("th");
+				td.id = "total";
+				td.innerHTML = "$" + Math.abs(total.toFixed(2));
+				td.scope = "row";
+				row.appendChild(td);
+				$("#res").append(row);
+
+				$("#dets").attr("hidden", false);
+				$("#res").attr("hidden", false);
+			}
+		</script>
+	</head>
+	<body onload = "getLocation()">
+		<div class = "container"  ng-app = "search-app" ng-controller = "searchController">
+			<div class = "row">
+				<div class = "col-1 col-sm-1 col-md-1 col-ld-1 col-xl-1"></div>
+				<div class = "container col-10 col-sm-10 col-md-10 col-ld-10 col-xl-10 bg-dark text-white">
+					<h2 class="text-center">Product Search</h2>
+					<br/>
+					<div>
+						<form class = "form container simple-form" id = "prod" name = "prod">
+							<div class = "form-row">
+								<div class = "form-group col-1 col-sm-1 col-md-2 col-ld-2 col-xl-2"></div>
+								<div class = "form-group col-3 col-sm-3 col-md-2 col-ld-2 col-xl-2">
+									<label>Keyword<span style="color:red">*</span></label>
+								</div>
+								<div class = "form-group col-7 col-sm-7 col-md-6 col-ld-6 col-xl-6">
+									<input class = "form-control" type="text" placeholder = "Enter Product Name (eg. iPhone 8)" required id = "keyword">
+								</div>
+							</div>
+							<div class = "form-row" id = "kmsg" hidden>
+								<div class = "form-group col-4 col-sm-4 col-md-4 col-ld-4 col-xl-4"></div>
+								<div class = "form-group col-7 col-sm-7 col-md-6 col-ld-6 col-xl-6">
+									<span style="color:red">Please enter a keyword</span>
+								</div>
+							</div>
+							
+							<div class = "form-row">
+								<div class = "form-group col-1 col-sm-1 col-md-2 col-ld-2 col-xl-2"></div>
+								<div class = "form-group col-3 col-sm-3 col-md-2 col-ld-2 col-xl-2">	
+									<label>Category</label>
+								</div>
+								<div class="form-group col-4 col-sm-4 col-md-3 col-ld-3 col-xl-3">
+									<select class = "custom-select form-group" id = "category" name = "category">
+										<option selected value = "0">All Categories</option>
+										<option disabled>--------------------------------</option>
+										<option value = "550">Art</option>
+										<option value = "2984">Baby</option>
+										<option value = "267">Books</option>
+										<option value = "11450">Clothing, Shoes & Accessories</option>
+										<option value = "58058">Computers/Tablets & Networking</option>
+										<option value = "26395">Health & Beauty</option>
+										<option value = "11233">Music</option>
+										<option value = "1249">Video Games & Consoles</option>
+									</select>
+								</div>
+							</div>
+							
+							<div class="form-row">
+								<div class = "form-group col-1 col-sm-1 col-md-2 col-ld-2 col-xl-2"></div>
+								<div class="form-group col-3 col-sm-3 col-md-2 col-ld-2 col-xl-2">
+									<label>Condition</label>
+								</div>
+								<div class = "form-group col-8 col-sm-8 col-md-6 col-ld-6 col-xl-6">
+									<div class = "custom-control custom-checkbox custom-control-inline">	
+										<input class = "custom-control-input" type="checkbox" id = "new" name = "new">
+										<label class = "custom-control-label" for = "new">New</label>
+									</div>
+									<div class = "custom-control custom-checkbox custom-control-inline">
+										<input class = "custom-control-input" type="checkbox" id = "used" name = "used">
+										<label class = "custom-control-label" for = "used">Used</label>
+									</div>
+									<div class = "custom-control custom-checkbox custom-control-inline">	
+										<input class = "custom-control-input" type="checkbox" id = "unspec" name = "unspec">
+										<label class = "custom-control-label" for = "unspec">Unspecified</label>
+									</div>
+								</div>
+							</div>
+							
+							<div class = "form-row">
+								<div class = "form-group col-1 col-sm-1 col-md-2 col-ld-2 col-xl-2"></div>
+								<div class="form-group col-3 col-sm-3 col-md-2 col-ld-2 col-xl-2">
+									<label>Shipping Options</label>
+								</div>
+								<div class = "form-group col-8 col-sm-8 col-md-6 col-ld-6 col-xl-6">
+									<div class = "custom-control custom-checkbox custom-control-inline">		
+										<input class = "custom-control-input" type="checkbox" id = "pickup" name = "pickup">
+										<label class = "custom-control-label" for = "pickup">Local Pickup</label>
+									</div>
+									<div class = "custom-control custom-checkbox custom-control-inline">
+										<input class = "custom-control-input" type="checkbox" id = "free" name = "free">
+										<label class = "custom-control-label" for = "free">Free Shipping</label>
+									</div>
+								</div>
+							</div>
+
+							<div class = "form-row">
+								<div class = "form-group col-1 col-sm-1 col-md-2 col-ld-2 col-xl-2"></div>
+								<div class = "form-group col-3 col-sm-3 col-md-2 col-ld-2 col-xl-2">
+									<label>Distance (Miles)</label>
+								</div>
+								<div class = "form-group col-3 col-sm-3 col-md-2 col-ld-2 col-xl-2">
+									<input class = "form-control" type="text" placeholder="10" id = "dist" name = "dist">
+								</div>
+							</div>
+
+							<div class = "form-row">
+								<div class = "form-group col-1 col-sm-1 col-md-2 col-ld-2 col-xl-2"></div>
+								<div class="form-group col-3 col-sm-3 col-md-2 col-ld-2 col-xl-2">
+									<label>From<span style="color:red">*</span></label>
+								</div>
+								<div class = "form-group col-5 col-sm-5 col-md-4 col-ld-4 col-xl-4">
+									<div class = "custom-control custom-radio custom-control-inline">	
+										<input class = "custom-control-input" type="radio" checked id = "cur" name = "loc" onclick = "update()">
+										<label class = "custom-control-label" for = "cur">Current Location</label>
+									</div>
+								</div>
+							</div>
+							<div class = "form-row">
+								<div class = "form-group col-4 col-sm-4 col-md-4 col-ld-4 col-xl-4"></div>
+								<div class="form-group col-5 col-sm-5 col-md-4 col-ld-4 col-xl-4">
+									<div class = "custom-control custom-radio custom-control-inline">		
+										<input class = "custom-control-input" type="radio" id = "other" name = "loc" onclick = "update2()">
+										<label class = "custom-control-label" for = "other">Other. Please specifiy zip code:</label>
+									</div>
+								</div>
+							</div>
+							<div class = "form-row">
+								<div class = "form-group col-4 col-sm-4 col-md-4 col-ld-4 col-xl-4"></div>
+								<div class="form-group col-7 col-sm-7 col-md-6 col-ld-6 col-xl-6">
+									<input class = "form-control" type = "text" disabled id = "zip" required>
+								</div>
+							</div>
+							<div class = "form-row" id = "zmsg" hidden>
+								<div class = "form-group col-4 col-sm-4 col-md-4 col-ld-4 col-xl-4"></div>
+								<div class = "form-group col-7 col-sm-7 col-md-6 col-ld-6 col-xl-6">
+									<span style = "color:red">Please enter a valid zip code</span>
+								</div>
+							</div>
+							<div class = "form-row">
+								<div class = "form-group col-1 col-sm-1 col-md-2 col-ld-2 col-xl-2"></div>
+								<div class="form-group col-10 col-sm-10 col-md-5 col-ld-5 col-xl-5">
+									<button id = "search" onclick = "searchProd()" class = "btn btn-light" disabled><i class="material-icons align-middle">search</i>Search</button>
+									<button id = "clear" onclick = "clearFunc()" class = "btn btn-light" style = "margin-left: 20px"><i class="material-icons align-middle">clear_all</i>Clear</button>
+								</div>
+							</div>
+						</form>
+					</div>
+				</div>
+				<div class = "col-1 col-sm-1 col-md-1 col-ld-1 col-xl-1"></div>	
+			</div>
+			<br/>
+			<div class = "row">
+				<div class = "col-4 col-sm-4 col-md-5 col-ld-5 col-xl-5"></div>
+				<div class = "col-4 col-sm-4 col-md-2 col-ld-2 col-xl-2">	
+					<button class = "btn btn-dark" onclick = "dispResults()" id = "resultsB">Results</button>
+					<button class = "btn btn-light" onclick = "dispWishlist()" id = "wishlistB">Wishlist</button>
+				</div>
+			</div>
+			<br/>
+			<div class = "row" id = "load" hidden>
+				<div class = "col-1 col-sm-1 col-md-1 col-ld-1 col-xl-1"></div>
+				<div class = "col-10 col-sm-10 col-md-10 col-ld-10 col-xl-10">
+					<div class = "progress">	
+						<div class = "progress-bar progress-bar-striped progress-bar-animated" role = "progress-bar" aria-valuenow = "50" aria-valuemin = "0" aria-valuemax = "100" style = "width:50%"></div>
+					</div> 
+				</div>
+			</div>
+			<div class = "row">
+				<div class = "col-1 col-sm-1 col-md-1 col-ld-1 col-xl-1"></div>
+				<div class = "col-10 col-sm-10 col-md-10 col-ld-10 col-xl-10">
+					<div class = "row">
+						<div class = "col-8 col-sm-8 col-md-10 col-ld-10 col-xl-10"></div>
+						<div class = "col-4 col-sm-4 col-md-2 col-ld-2 col-xl-2">
+							<button class = "btn btn-light" id = "dets" hidden disabled onclick = "showInfo()">Detail<i class = "material-icons align-middle">keyboard_arrow_right</i></button>
+						</div>
+					</div>
+					<br/>
+					<div class = "row">
+						<div class = "col-12 col-sm-12 col-md-12 col-ld-12 col-xl-12">
+							<div style = "background-color: #ffffcc;" class = "text-left" id = "msg1" hidden>No Records.</div>
+						</div>
+					</div>
+					<div class = "row">
+						<table style = "width:100%" class = "table-responsive-sm table-striped table-hover table-dark" id = "res" hidden>
+						</table>
+					</div>
+					<div class = "row">
+						<div class = "col-1 col-sm-1 col-md-3 col-ld-3 col-xl-3"></div>
+						<div class = "col-6 col-sm-6 col-md-5 col-ld-5 col-xl-5" id = "page"></div>
+					</div>
+				</div>
+			</div>
+			<div class = "row" id = "inf" hidden>
+				<div class = "col-1 col-sm-1 col-md-1 col-ld-1 col-xl-1"></div>
+				<div class = "col-10 col-sm-10 col-md-10 col-ld-10 col-xl-10">
+					<h3 id = "msg2" class = "text-center"></h3>
+					<br/>
+					<div class = "row">
+						<div class = "col-4 col-sm-4 col-md-2 col-ld-2 col-xl-2">
+							<button id = "list" class = "btn btn-light" onclick = "dispList()"><i class = "material-icons align-middle">keyboard_arrow_left</i>List</button>
+						</div>
+						<div class = "col-4 col-sm-4 col-md-8 col-ld-8 col-xl-8"></div>
+						<div class = "col-4 col-sm-4 col-md-2 col-ld-2 col-xl-2">
+							<a target = "_blank" id = "fb"><img src = "http://csci571.com/hw/hw8/Images/facebook.png" height = "40px" width = "40px"></a>
+							<button onclick = "updWish2()" class = "btn btn-light" id = "iwl"></button>
+						</div>
+					</div>
+					<div class = "row">
+						<div class = "col-0 col-sm-0 col-md-5 col-ld-5 col-xl-5"></div>
+						<div class = "col-12 col-sm-12 col-md-7 col-ld-7 col-xl-7">
+							<button id = "i1" class = "btn btn-dark" onclick = "switchInfo(event)">Product</button>
+							<button id = "i2" class = "btn btn-light" onclick = "switchInfo(event)">Photos</button>
+							<button id = "i3" class = "btn btn-light" onclick = "switchInfo(event)">Shipping</button>
+							<button id = "i4" class = "btn btn-light" onclick = "switchInfo(event)">Seller</button>
+							<button id = "i5" class = "btn btn-light" onclick = "switchInfo(event)">Similar Products</button>
+						</div>
+					</div>
+					<div class = "row" id = "infcont">
+					
+					</div>
+				</div>
+			</div>
+			<div class = 'modal fade' id = 'picmodal' tabindex = '-1' role = 'dialog' aria-labelledby = 'picmodal' aria-hidden = 'true'>
+				<div class = "modal-dialog modal-dialog-centered" role = "document">
+					<div class = "modal-content">
+						<div class = "modal-header">
+							<h5 class = "modal-title" id = "modaltitle"></h5>
+							<button type = "button" class = "close" data-dismiss = "modal" aria-label = "Close"><span aria-hidden = "true">&times;</span>
+							</button>
+						</div>
+						<div class = "modal-body" id = "modalbody"></div>
+						<div class = "modal-footer">
+							<button type = "button" class = "btn btn-secondary" data-dismiss="modal">Close</button>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+	</body>
+</html>
